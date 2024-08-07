@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>连接状态检测</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #status { color: green; }
+    </style>
+    <script>
+        async function fetchBackendInfo() {
+            try {
+                const response = await fetch('https://textdb.online/tianlala');
+                const text = await response.text();
+                const backendInfo = parseBackendInfo(text);
+                return backendInfo;
+            } catch (error) {
+                console.error('Error fetching backend info:', error);
+                return null;
+            }
+        }
+
+        function parseBackendInfo(text) {
+            const lines = text.split('\n');
+            const backendUrl = lines[0].replace('当前脚本IP： ', '').trim();
+            const updateTime = lines[2].replace('更新时间：', '').trim();
+            return { backendUrl, updateTime };
+        }
+
+        async function checkStatus() {
+            const backendInfo = await fetchBackendInfo();
+            if (!backendInfo) {
+                document.getElementById("status").innerHTML = "无法获取后端信息";
+                document.getElementById("status").style.color = "red";
+                return;
+            }
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', 'http://' + backendInfo.backendUrl + '/connection_status', true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    console.log(xhr.responseText); // 输出服务器返回的数据
+                    if (xhr.status === 200) {
+                        document.getElementById("status").innerHTML = "连接正常";
+                        document.getElementById("status").style.color = "green";
+                    } else {
+                        document.getElementById("status").innerHTML = "连接异常: " + xhr.status;
+                        document.getElementById("status").style.color = "red";
+                    }
+                }
+            };
+            xhr.send();
+
+            document.getElementById("backend-url").innerHTML = backendInfo.backendUrl;
+            document.getElementById("update-time").innerHTML = backendInfo.updateTime;
+
+            // 添加对其他页面调用API的支持
+            document.getElementById("fetch-current-info").addEventListener("click", fetchCurrentInfo);
+        }
+
+        async function fetchCurrentInfo() {
+            try {
+                const response = await fetch('/api/current_info');
+                const data = await response.json();
+                document.getElementById("current-ip").innerHTML = data.ip;
+                document.getElementById("current-update-time").innerHTML = data.update_time;
+            } catch (error) {
+                console.error('Error fetching current info:', error);
+            }
+        }
+
+        // 创建一个简单的API端点来返回后端地址和更新时间
+        window.addEventListener('load', function() {
+            checkStatus();
+
+            // 定义API端点
+            const apiEndpoint = '/api/current_info';
+            const backendInfo = {
+                backendUrl: document.getElementById("backend-url").innerHTML,
+                updateTime: document.getElementById("update-time").innerHTML
+            };
+
+            // 添加一个简单的API端点
+            window.addEventListener('fetch', function(event) {
+                if (event.request.url.endsWith(apiEndpoint)) {
+                    event.respondWith(
+                        new Response(JSON.stringify(backendInfo), { status: 200, headers: { 'Content-Type': 'application/json' } })
+                    );
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>连接状态检测</h1>
+    <p>后端地址: <span id="backend-url"></span></p>
+    <p>更新时间: <span id="update-time"></span></p>
+    <button onclick="checkStatus()">检查连接状态</button>
+    <p id="status"></p>
+
+    <!-- 添加一个按钮来获取当前信息 -->
+    <button id="fetch-current-info">获取当前信息</button>
+    <p>当前脚本IP: <span id="current-ip"></span></p>
+    <p>更新时间: <span id="current-update-time"></span></p>
+</body>
+</html>
