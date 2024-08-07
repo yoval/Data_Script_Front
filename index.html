@@ -12,8 +12,8 @@
 <body>
     <div class="connection-status">
         <p>后端地址: <span id="backend-url"></span></p>
-        <p>更新时间: <span id="update-time"></span></p>
-        <button id="check-status-button" class="btn btn-primary">检查连接状态</button>
+        <p>更新时间:<span id="update-time"></span></p>
+        <button id="check-status-button" class="btn btn-primary">刷新</button>
         <p id="status-message"></p>
     </div>
 
@@ -54,10 +54,11 @@
         <p>&copy; 2024 Fuwenyue. All rights reserved.</p>
     </div>
 
-    <!-- 引入 Bootstrap JS 库 -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <!-- 引入 jQuery 和 Popper.js（国内 CDN） -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/popper.js/2.9.3/umd/popper.min.js"></script>
+    <!-- 引入 Bootstrap JS 库（国内 CDN） -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/4.6.0/js/bootstrap.min.js"></script>
     <!-- 引入自定义 JavaScript 文件 -->
     <script src="js/scripts.js"></script>
 </body>

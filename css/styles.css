@@ -131,15 +131,24 @@ tr:hover {
     background-color: #d1e7dd;
 }
 
-/* 新增样式 */
+
 .connection-status {
-    position: absolute;
+    position: relative;
     top: 10px;
     left: 10px;
     z-index: 1000;
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.connection-status .connection-info {
+    display: flex;
+    flex-direction: column; /* 修改为列布局 */
+    align-items: center; /* 居中对齐 */
 }
 
 .connection-status p {
-    display: inline-block;
-    margin-right: 10px;
+    margin: 5px 0; /* 添加一些上下间距 */
 }

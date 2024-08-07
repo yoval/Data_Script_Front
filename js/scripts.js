@@ -17,23 +17,41 @@ async function fetchBackendInfo() {
         return { backendUrl, updateTime };
     } catch (error) {
         console.error("Error fetching backend info:", error);
-        return null;
+        return { error: "无法获取后端信息" };
     }
 }
 
 // 检查连接状态的函数
 async function checkStatus() {
     const backendInfo = await fetchBackendInfo();
-    if (backendInfo) {
+    const statusMessageElement = document.getElementById("status-message");
+
+    if (backendInfo.error) {
+        statusMessageElement.textContent = backendInfo.error;
+        statusMessageElement.className = "text-danger";
+    } else {
         document.getElementById("backend-url").textContent = backendInfo.backendUrl;
         document.getElementById("update-time").textContent = backendInfo.updateTime;
-        document.getElementById("status-message").textContent = "连接正常";
-        document.getElementById("status-message").className = "text-success";
-    } else {
-        document.getElementById("status-message").textContent = "无法获取后端信息";
-        document.getElementById("status-message").className = "text-danger";
+
+        try {
+            const response = await fetch(`http://${backendUrl}/connection_status`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            statusMessageElement.textContent = "连接成功";
+            statusMessageElement.className = "text-success";
+        } catch (error) {
+            statusMessageElement.textContent = "连接失败";
+            statusMessageElement.className = "text-danger";
+        }
     }
 }
+
+// 页面加载时执行的操作
+document.addEventListener("DOMContentLoaded", () => {
+    checkStatus();
+    document.getElementById("check-status-button").addEventListener("click", checkStatus);
+});
 
 // 更新文件列表的函数
 async function updateFileList() {
