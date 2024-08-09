@@ -1,20 +1,28 @@
 let backendUrl; // 全局变量用于存储后端URL
 
 // 获取后端信息的函数
+// 获取后端信息的函数
 async function fetchBackendInfo() {
     try {
         console.log("Fetching backend info...");
-        const response = await fetch('https://textdb.online/tianlala');
+        const response = await fetch('https://textdb.online/tll_json?timestamp=' + new Date().getTime()); // 添加时间戳防止缓存
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const text = await response.text();
-        console.log("Fetch text:", text);
-        const lines = text.split('\n');
-        backendUrl = lines[0].replace('当前脚本IP： ', '').trim();
-        const updateTime = lines[2].replace('更新时间：', '').trim();
-        console.log("Backend URL:", backendUrl);
-        return { backendUrl, updateTime };
+        const data = await response.json();
+        console.log("Fetched data:", data);
+        
+        let fetchedBackendUrl = data["当前网址"].trim(); // 使用 let 定义局部变量
+        const updateTime = data["更新时间"]; // 获取时间戳
+        const author = data["脚本作者"].trim();
+        console.log("Backend URL:", fetchedBackendUrl);
+        console.log("Update Time:", updateTime); // 显示时间戳
+        console.log("Script Author:", author);
+        
+        globalThis.backendUrl = fetchedBackendUrl; // 尝试使用 window 对象
+        console.log("Setting global backendUrl:", globalThis.backendUrl); // 新增调试信息
+        
+        return { backendUrl: fetchedBackendUrl, updateTime, author };
     } catch (error) {
         console.error("Error fetching backend info:", error);
         return { error: "无法获取后端信息" };
@@ -31,10 +39,11 @@ async function checkStatus() {
         statusMessageElement.className = "text-danger";
     } else {
         document.getElementById("backend-url").textContent = backendInfo.backendUrl;
-        document.getElementById("update-time").textContent = backendInfo.updateTime;
+        document.getElementById("update-time").textContent = timestampToDate(backendInfo.updateTime); // 调用函数转换时间戳
+        console.log("Setting update time:", timestampToDate(backendInfo.updateTime)); // 显示更新时间
 
         try {
-            const response = await fetch(`http://${backendUrl}/connection_status`);
+            const response = await fetch(`${globalThis.backendUrl}/connection_status`);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -47,16 +56,26 @@ async function checkStatus() {
     }
 }
 
-// 页面加载时执行的操作
-document.addEventListener("DOMContentLoaded", () => {
-    checkStatus();
-    document.getElementById("check-status-button").addEventListener("click", checkStatus);
-});
+// 将毫秒级的时间戳转换为日期和时间的格式
+function timestampToDate(timestamp) {
+    var date = new Date(timestamp); // 直接使用毫秒级的时间戳
+    var year = date.getFullYear();
+    var month = ("0" + (date.getMonth() + 1)).slice(-2); // getMonth() 返回的月份是从0开始的
+    var day = ("0" + date.getDate()).slice(-2);
+    var hour = ("0" + date.getHours()).slice(-2);
+    var minute = ("0" + date.getMinutes()).slice(-2);
+    var second = ("0" + date.getSeconds()).slice(-2);
+
+    return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
+}
+
 
 // 更新文件列表的函数
 async function updateFileList() {
+    console.log("Using backendUrl before fetch:", globalThis.backendUrl); // 使用 globalThis.backendUrl
+
     try {
-        const response = await fetch(`http://${backendUrl}/list`);
+        const response = await fetch(`${globalThis.backendUrl}/list`);
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -78,7 +97,7 @@ function updateFileTable(fileListData) {
 
         const fileNameCell = document.createElement("td");
         const downloadLink = document.createElement("a");
-        downloadLink.href = `http://${backendUrl}/download/${encodeURIComponent(fileName)}`;
+        downloadLink.href = `${globalThis.backendUrl}/download/${encodeURIComponent(fileName)}`;
         downloadLink.textContent = fileName;
         fileNameCell.appendChild(downloadLink);
 
@@ -95,10 +114,19 @@ function updateFileTable(fileListData) {
 }
 
 // 页面加载时执行的操作
-document.addEventListener("DOMContentLoaded", () => {
-    fetchBackendInfo().then(() => {
-        checkStatus();
-        updateFileList();
-    });
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        console.log("Starting initialization...");
+        const backendInfo = await fetchBackendInfo();
+        if (!backendInfo.error) {
+            console.log("Starting checkStatus...");
+            await checkStatus();
+            console.log("Starting updateFileList...");
+            await updateFileList();
+        }
+    } catch (error) {
+        console.error("Error initializing:", error);
+    }
+
     document.getElementById("check-status-button").addEventListener("click", checkStatus);
 });
